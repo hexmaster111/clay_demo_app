@@ -1,0 +1,11 @@
+{
+    "files.associations": {
+        "stdio.h": "c",
+        "clay.h": "c",
+        "signal.h": "c",
+        "raymath.h": "c",
+        "stdint.h": "c",
+        "raylib.h": "c",
+        "clay_renderer_raylib.h": "c"
+    }
+}
