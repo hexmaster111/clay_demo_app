@@ -86,6 +86,33 @@ void RenderHeaderButton(Clay_String text, int idx)
     }
 }
 
+void Clay_Slider(float *value, float min, float max)
+{
+    CLAY(
+        CLAY_ID("SLIDER"),
+        CLAY_LAYOUT((Clay_LayoutConfig){
+            .sizing = {.width = CLAY_SIZING_GROW(),
+                       .height = {.type = CLAY__SIZING_TYPE_FIXED, .sizeMinMax = {.min = 32, .max = 32}}}})
+
+        // CLAY_RECTANGLE((Clay_RectangleElementConfig){.color = COLOR_WHITE})
+    )
+    {
+        CLAY(CLAY_ID("THUMB"),
+             CLAY_LAYOUT((Clay_LayoutConfig){
+                 .sizing = {.width = CLAY_SIZING_FIXED(32), .height = CLAY_SIZING_FIXED(32)}}),
+             CLAY_RECTANGLE((Clay_RectangleElementConfig){
+                 .color = COLOR_WHITE,
+                 .cornerRadius = cornerraidus}))
+        {
+            /* Thumb Content */
+        }
+
+        CLAY(); // TRACK
+        CLAY(); // LEFT BUTTON
+        CLAY(); // RIGHT BUTTON
+    }
+}
+
 Clay_LayoutConfig dropdownTextItemLayout = (Clay_LayoutConfig){.padding = {8, 4}};
 Clay_RectangleElementConfig dropdownRectangleConfig = (Clay_RectangleElementConfig){.color = {180, 180, 180, 255}};
 Clay_TextElementConfig dropdownTextElementConfig = (Clay_TextElementConfig){.fontSize = 24, .textColor = {255, 255, 255, 255}};
@@ -203,6 +230,9 @@ Clay_RenderCommandArray CreateLayout()
                      .color = {200, 200, 255, 255},
                      .cornerRadius = cornerraidus}))
             {
+                static float v = 0;
+                const float min = 0, max = 100;
+                Clay_Slider(&v, min, max);
             }
         }
 
