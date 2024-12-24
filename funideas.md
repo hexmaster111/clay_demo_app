@@ -1,0 +1,1 @@
+using "for" as a way to automaticly destory vars as the come outof scope, like using (Streamread....){} in C#

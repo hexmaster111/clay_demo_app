@@ -25,6 +25,7 @@ Clay_CornerRadius cornerraidus = {10, 10, 10, 10};
 
 int g_selectedListItem = 0;
 int g_selectedHeader = 0;
+char g_sliderValueTextBuffer[100] = {0};
 
 /* NULL TERMINATED LIST */
 Clay_String g_itemnames[] = {
@@ -86,17 +87,71 @@ void RenderHeaderButton(Clay_String text, int idx)
     }
 }
 
-
 void SliderThumb_OnHover(Clay_ElementId elementId, Clay_PointerData pointerInfo, intptr_t userData)
 {
-    float* value = (float*)userData;
-    
+    float *value = (float *)userData;
 }
 
-void Clay_Slider(float *value, float min, float max)
+float ScailFloat(float value, float from_min, float from_max, float to_min, float to_max)
 {
+    if (from_max == from_min)
+    {
+        return to_min; // div 0
+    }
+
+    return (value - from_min) * (to_max - to_min) / (from_max - from_min) + to_min;
+}
+
+Clay_String ClayStringFromCString(const char *str)
+{
+    return (Clay_String){
+        .chars = str,
+        .length = strlen(str)};
+}
+
+float PercentChangeF(float old_value, float new_value)
+{
+    if (old_value == 0)
+    {
+        return (new_value == 0) ? 0.0f : INFINITY;
+    }
+    return ((new_value - old_value) / old_value) * 100.0f;
+}
+
+Clay__ScrollContainerDataInternal *FindScrollContainerDataInternal(Clay_ElementId id)
+{
+    Clay__ScrollContainerDataInternal *find = NULL;
+    for (int sidx = 0; sidx < Clay__scrollContainerDatas.length; sidx++)
+    {
+        find = Clay__ScrollContainerDataInternalArray_Get(
+            &Clay__scrollContainerDatas,
+            sidx);
+
+        if (find->elementId == id.id)
+        {
+            break;
+        }
+
+        find = NULL;
+    }
+
+    return find;
+}
+
+void Slider(float *value, float min, float max, Clay_String label)
+{
+
+    float zero_to_one_pos = Clamp(ScailFloat(*value, min, max, 0.0f, 1.0f), 0, 1);
+
+    Clay_ElementId sliderId = Clay__HashString(label, 0, 0);
+    Clay_ElementId thumbId = Clay__HashString(label, 1, 0);
+    Clay_ElementId trackLeftId = Clay__HashString(label, 2, 0);
+    Clay_ElementId trackRightId = Clay__HashString(label, 3, 0);
+
     CLAY(
-        CLAY_ID("SLIDER"),
+        // CLAY_ID("SLIDER"),
+        Clay__AttachId(sliderId),
+        CLAY_SCROLL((Clay_ScrollElementConfig){.horizontal = true}),
         CLAY_LAYOUT((Clay_LayoutConfig){
             .sizing = {.width = CLAY_SIZING_GROW(), .height = {.type = CLAY__SIZING_TYPE_FIXED, .sizeMinMax = {.min = 32, .max = 32}}},
             .padding.x = 0,
@@ -105,23 +160,46 @@ void Clay_Slider(float *value, float min, float max)
         // CLAY_RECTANGLE((Clay_RectangleElementConfig){.color = COLOR_WHITE})
     )
     {
-        CLAY(CLAY_ID("TRACK"),
-             CLAY_RECTANGLE((Clay_RectangleElementConfig){
-                 .color = COLOR_BLACK, .cornerRadius = cornerraidus}),
-             CLAY_LAYOUT((Clay_LayoutConfig){
-                 .sizing = {.width = CLAY_SIZING_GROW(), .height = CLAY_SIZING_GROW()}}))
+
+        if (Clay_Hovered() && IsMouseButtonDown(MOUSE_BUTTON_LEFT))
         {
-            
-            Clay__LayoutElementHashMapItemArray_Get(&Clay__layoutElementsHashMapInternal, );
+            Clay_ScrollContainerData track = Clay_GetScrollContainerData(sliderId);
+            Clay_ScrollContainerData thumb = Clay_GetScrollContainerData(thumbId);
+            Clay__ScrollContainerDataInternal *track_internal_data = FindScrollContainerDataInternal(sliderId);
+            Clay__ScrollContainerDataInternal *thumb_internal_data = FindScrollContainerDataInternal(thumbId);
+
+            if (track.found && thumb.found && track_internal_data && thumb_internal_data)
+            {
+                // put the track where the users currsor is clicking on the track
+
+                Vector2 mousePos = GetMousePosition();
+                Vector2 trackPos = (Vector2){track_internal_data->boundingBox.x, track_internal_data->boundingBox.y};
+
+                Vector2 mouseRelitiveToTrack = Vector2Subtract(mousePos, trackPos);
+                Vector2 trackSize = (Vector2){track_internal_data->boundingBox.width, track_internal_data->boundingBox.height};
+
+                Vector2 click_percent = (Vector2){
+                    .x = ScailFloat(mouseRelitiveToTrack.x - thumb_internal_data->boundingBox.width * 0.5f, 0, trackSize.x, 0, 1),
+                    .y = ScailFloat(mouseRelitiveToTrack.y - thumb_internal_data->boundingBox.height * 0.5f, 0, trackSize.y, 0, 1)};
+
+                *value = Clamp(ScailFloat(click_percent.x, 0, 1, min, max), min, max);
+            }
         }
 
-        CLAY(CLAY_ID("THUMB"),
-             CLAY_FLOATING((Clay_FloatingElementConfig){
-                 .zIndex = 1,
-                 .offset = {.x = 5.0f},
-                 .attachment = {CLAY_ATTACH_POINT_LEFT_CENTER, CLAY_ATTACH_POINT_LEFT_CENTER}}),
+        CLAY(
+            Clay__AttachId(trackLeftId),
+            // CLAY_ID("TRACKL"),
+            CLAY_RECTANGLE((Clay_RectangleElementConfig){
+                .color = COLOR_BLACK, .cornerRadius = cornerraidus}),
+            CLAY_LAYOUT((Clay_LayoutConfig){
+                .sizing = {.width = CLAY_SIZING_PERCENT(zero_to_one_pos), .height = CLAY_SIZING_GROW()}}))
+        {
+        }
+        /*  THUMB   */
+        CLAY(Clay__AttachId(thumbId),
+             CLAY_SCROLL((Clay_ScrollElementConfig){.horizontal = true}),
              CLAY_LAYOUT((Clay_LayoutConfig){
-                 .sizing = {.width = CLAY_SIZING_FIXED(32), .height = CLAY_SIZING_FIXED(32)}}),
+                 .sizing = {.width = CLAY_SIZING_FIXED(64), .height = CLAY_SIZING_GROW()}}),
              CLAY_RECTANGLE((Clay_RectangleElementConfig){
                  .color = Clay_Hovered() && IsMouseButtonDown(MOUSE_BUTTON_LEFT) ? COLOR_BLUE : COLOR_WHITE,
                  .cornerRadius = cornerraidus}),
@@ -130,8 +208,15 @@ void Clay_Slider(float *value, float min, float max)
             /* Thumb Content */
         }
 
-        CLAY(){} // LEFT BUTTON
-        CLAY(){} // RIGHT BUTTON
+        CLAY(Clay__AttachId(trackRightId),
+             // CLAY_ID("TRACKR"),
+             CLAY_RECTANGLE((Clay_RectangleElementConfig){
+                 .color = COLOR_BLACK,
+                 .cornerRadius = cornerraidus}),
+             CLAY_LAYOUT((Clay_LayoutConfig){
+                 .sizing = {.width = CLAY_SIZING_GROW(), .height = CLAY_SIZING_GROW()}}))
+        {
+        }
     }
 }
 
@@ -254,7 +339,26 @@ Clay_RenderCommandArray CreateLayout()
             {
                 static float v = 0;
                 const float min = 0, max = 100;
-                Clay_Slider(&v, min, max);
+                Clay_TextElementConfig te = {.fontId = FONT_ID_BODY_16, .fontSize = 24, .textColor = COLOR_ORANGE};
+
+                CLAY(CLAY_ID("SliderDemo"),
+                     CLAY_LAYOUT((Clay_LayoutConfig){
+                         .layoutDirection = CLAY_TOP_TO_BOTTOM,
+                         .sizing = {CLAY_SIZING_GROW(), CLAY_SIZING_GROW()}}))
+                {
+
+                    float d = (-1 * v) + 100;
+                    snprintf(g_sliderValueTextBuffer, sizeof(g_sliderValueTextBuffer),
+                             "%.2f, %.2f", v, d);
+
+                    CLAY_TEXT(ClayStringFromCString(g_sliderValueTextBuffer), CLAY_TEXT_CONFIG(te));
+
+                    CLAY(CLAY_LAYOUT({.padding = {5, 5}, .sizing = {CLAY_SIZING_GROW(), CLAY_SIZING_GROW()}}))
+                    {
+                        Slider(&v, min, max, CLAY_STRING("SLIDER1"));
+                    }
+                    Slider(&d, min, max, CLAY_STRING("SLIDER2"));
+                }
             }
         }
 
@@ -315,7 +419,7 @@ int main(void)
     SetTextureFilter(Raylib_fonts[FONT_ID_BODY_16].font.texture, TEXTURE_FILTER_BILINEAR);
 
     //--------------------------------------------------------------------------------------
-
+    SetTargetFPS(60);
     // Main game loop
     while (!WindowShouldClose()) // Detect window close button or ESC key
     {
