@@ -86,30 +86,52 @@ void RenderHeaderButton(Clay_String text, int idx)
     }
 }
 
+
+void SliderThumb_OnHover(Clay_ElementId elementId, Clay_PointerData pointerInfo, intptr_t userData)
+{
+    float* value = (float*)userData;
+    
+}
+
 void Clay_Slider(float *value, float min, float max)
 {
     CLAY(
         CLAY_ID("SLIDER"),
         CLAY_LAYOUT((Clay_LayoutConfig){
-            .sizing = {.width = CLAY_SIZING_GROW(),
-                       .height = {.type = CLAY__SIZING_TYPE_FIXED, .sizeMinMax = {.min = 32, .max = 32}}}})
+            .sizing = {.width = CLAY_SIZING_GROW(), .height = {.type = CLAY__SIZING_TYPE_FIXED, .sizeMinMax = {.min = 32, .max = 32}}},
+            .padding.x = 0,
+            .childAlignment = {.x = CLAY_ALIGN_X_LEFT}})
 
         // CLAY_RECTANGLE((Clay_RectangleElementConfig){.color = COLOR_WHITE})
     )
     {
+        CLAY(CLAY_ID("TRACK"),
+             CLAY_RECTANGLE((Clay_RectangleElementConfig){
+                 .color = COLOR_BLACK, .cornerRadius = cornerraidus}),
+             CLAY_LAYOUT((Clay_LayoutConfig){
+                 .sizing = {.width = CLAY_SIZING_GROW(), .height = CLAY_SIZING_GROW()}}))
+        {
+            
+            Clay__LayoutElementHashMapItemArray_Get(&Clay__layoutElementsHashMapInternal, );
+        }
+
         CLAY(CLAY_ID("THUMB"),
+             CLAY_FLOATING((Clay_FloatingElementConfig){
+                 .zIndex = 1,
+                 .offset = {.x = 5.0f},
+                 .attachment = {CLAY_ATTACH_POINT_LEFT_CENTER, CLAY_ATTACH_POINT_LEFT_CENTER}}),
              CLAY_LAYOUT((Clay_LayoutConfig){
                  .sizing = {.width = CLAY_SIZING_FIXED(32), .height = CLAY_SIZING_FIXED(32)}}),
              CLAY_RECTANGLE((Clay_RectangleElementConfig){
-                 .color = COLOR_WHITE,
-                 .cornerRadius = cornerraidus}))
+                 .color = Clay_Hovered() && IsMouseButtonDown(MOUSE_BUTTON_LEFT) ? COLOR_BLUE : COLOR_WHITE,
+                 .cornerRadius = cornerraidus}),
+             Clay_OnHover(SliderThumb_OnHover, (intptr_t)value))
         {
             /* Thumb Content */
         }
 
-        CLAY(); // TRACK
-        CLAY(); // LEFT BUTTON
-        CLAY(); // RIGHT BUTTON
+        CLAY(){} // LEFT BUTTON
+        CLAY(){} // RIGHT BUTTON
     }
 }
 
