@@ -438,6 +438,39 @@ typedef struct
     Clay_PointerDataInteractionState state;
 } Clay_PointerData;
 
+
+
+typedef struct Clay_LayoutElement Clay_LayoutElement;
+
+typedef struct
+{
+    Clay_LayoutElement *layoutElement;
+    Clay_BoundingBox boundingBox;
+    Clay_Dimensions contentSize;
+    Clay_Vector2 scrollOrigin;
+    Clay_Vector2 pointerOrigin;
+    Clay_Vector2 scrollMomentum;
+    Clay_Vector2 scrollPosition;
+    Clay_Vector2 previousDelta;
+    float momentumTime;
+    uint32_t elementId;
+    bool openThisFrame;
+    bool pointerScrollActive;
+} Clay__ScrollContainerDataInternal;
+
+
+typedef struct Clay__ScrollContainerDataInternalArray
+{
+	uint32_t capacity;
+	uint32_t length;
+	Clay__ScrollContainerDataInternal *internalArray;
+} Clay__ScrollContainerDataInternalArray;
+
+Clay__ScrollContainerDataInternal *Clay__ScrollContainerDataInternalArray_Get(Clay__ScrollContainerDataInternalArray *array, int index);
+
+
+
+
 // Function Forward Declarations ---------------------------------
 // Public API functions ---
 uint32_t Clay_MinMemorySize();
@@ -953,7 +986,7 @@ typedef struct
     uint16_t length;
 } Clay__LayoutElementChildren;
 
-typedef struct
+typedef struct Clay_LayoutElement
 {
     #ifdef CLAY_DEBUG
     Clay_String name;
@@ -1049,32 +1082,14 @@ Clay_RenderCommand *Clay_RenderCommandArray_Get(Clay_RenderCommandArray *array, 
 #pragma endregion
 // __GENERATED__ template
 
-typedef struct
-{
-    Clay_LayoutElement *layoutElement;
-    Clay_BoundingBox boundingBox;
-    Clay_Dimensions contentSize;
-    Clay_Vector2 scrollOrigin;
-    Clay_Vector2 pointerOrigin;
-    Clay_Vector2 scrollMomentum;
-    Clay_Vector2 scrollPosition;
-    Clay_Vector2 previousDelta;
-    float momentumTime;
-    uint32_t elementId;
-    bool openThisFrame;
-    bool pointerScrollActive;
-} Clay__ScrollContainerDataInternal;
+
 
 Clay__ScrollContainerDataInternal CLAY__SCROLL_CONTAINER_DEFAULT = CLAY__INIT(Clay__ScrollContainerDataInternal) {};
 
 // __GENERATED__ template array_define,array_allocate,array_add,array_get TYPE=Clay__ScrollContainerDataInternal NAME=Clay__ScrollContainerDataInternalArray DEFAULT_VALUE=&CLAY__SCROLL_CONTAINER_DEFAULT
 #pragma region generated
-typedef struct
-{
-	uint32_t capacity;
-	uint32_t length;
-	Clay__ScrollContainerDataInternal *internalArray;
-} Clay__ScrollContainerDataInternalArray;
+
+
 Clay__ScrollContainerDataInternalArray Clay__ScrollContainerDataInternalArray_Allocate_Arena(uint32_t capacity, Clay_Arena *arena) {
     return CLAY__INIT(Clay__ScrollContainerDataInternalArray){.capacity = capacity, .length = 0, .internalArray = (Clay__ScrollContainerDataInternal *)Clay__Array_Allocate_Arena(capacity, sizeof(Clay__ScrollContainerDataInternal), CLAY__ALIGNMENT(Clay__ScrollContainerDataInternal), arena)};
 }

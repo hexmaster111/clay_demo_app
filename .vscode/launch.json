@@ -5,6 +5,15 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "type": "lldb",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "name": "Launch",
+            "program": "${workspaceFolder}/clayprobe",
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
             "name": "(gdb) Launch",
             "type": "cppdbg",
             "preLaunchTask": "build",
