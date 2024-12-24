@@ -4,13 +4,6 @@
 #include "clay.h"
 // clang-format off
 
-#define COLOR_ORANGE   (Clay_Color) { 225, 138, 50, 255 }
-#define COLOR_BLUE     (Clay_Color) { 111, 173, 162, 255 }
-#define COLOR_BLACK    (Clay_Color) { 0, 0, 0, 255 }
-#define COLOR_WHITE    (Clay_Color) { 255, 255, 255, 255 }
-
-
-
 // Stollen from raylib ------
 // Some Basic Colors
 // NOTE: Custom raylib color palette for amazing visuals on WHITE background
