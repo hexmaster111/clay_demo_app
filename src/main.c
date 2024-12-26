@@ -14,34 +14,55 @@ Clay_TextElementConfig headerTextConfig = (Clay_TextElementConfig){.fontId = 1, 
 
 Clay_CornerRadius cornerraidus = {10, 10, 10, 10};
 
-int g_selectedListItem = 0;
-int g_selectedHeader = 0;
+int g_selectedListItem = -1;
+int g_selectedHeader = 1;
 char g_sliderValueTextBuffer[100] = {0};
 
-/* NULL TERMINATED LIST */
-Clay_String g_itemnames[] = {
-    CLAY_STRING("SOmething"),
-    CLAY_STRING("OtherTHings"),
-    CLAY_STRING("A REALLY REALLY REALLY LONG NAME"),
-    CLAY_STRING("some"),
-    CLAY_STRING("Obj"),
-    CLAY_STRING("Obj"),
-    CLAY_STRING("Obj"),
-    CLAY_STRING("Obj"),
-    CLAY_STRING("Obj"),
-    CLAY_STRING("Obj"),
-    CLAY_STRING("Obj"),
-    CLAY_STRING("Obj"),
-    CLAY_STRING("Obj"),
-    CLAY_STRING("Obj"),
-    CLAY_STRING("Obj"),
-    CLAY_STRING("Obj"),
-    CLAY_STRING("Obj"),
-    CLAY_STRING("Obj"),
-    CLAY_STRING("Obj"),
-    CLAY_STRING("Obj"),
-    CLAY_STRING("LAST"),
-    {.chars = NULL, .length = 0},
+typedef struct
+{
+    Clay_String partname;
+    Rectangle visuals[15];
+    int visualparts;
+
+    bool isplaced;
+    Vector2 position;
+} InvItem;
+
+InvItem g_player_inv[] = {
+    {
+        .partname = CLAY_STRING("CORE"),
+        .isplaced = true,
+        .position = {0, 0},
+        .visualparts = 2,
+        .visuals = {
+            {0.0, 0.0, 5.0, 5.0},
+            {2.5, 2.5, 2.5, 2.5},
+        },
+    },
+
+    {
+        .partname = CLAY_STRING("BOOST"),
+        .isplaced = false,
+        .position = {0, 0},
+        .visualparts = 2,
+        .visuals = {
+            {0.0, 0.0, 10.0, 5.0},
+            {2.5, 2.5, 2.5, 2.5},
+        },
+    },
+
+    {
+        .partname = CLAY_STRING("HULL HEALTH"),
+        .isplaced = false,
+        .position = {0, 0},
+        .visualparts = 1,
+        .visuals = {
+            {0.0, 0.0, 10.0, 10.0},
+        },
+    },
+
+    // NULL used to find end of list
+    {.isplaced = false, .partname = {.chars = NULL, .length = 0}},
 };
 
 void HandleHeaderButtonInteraction_OnHover(Clay_ElementId elementId, Clay_PointerData pointerData, intptr_t userData)
@@ -94,7 +115,12 @@ void LeftSideBarItemSelected_OnHover(Clay_ElementId elementId, Clay_PointerData 
 {
     if (pointerInfo.state == CLAY_POINTER_DATA_RELEASED_THIS_FRAME)
     {
-        TraceLog(LOG_INFO, TextFormat("Pressed %d", (int)userData));
+        if (g_selectedListItem == (int)userData)
+        {
+            g_selectedListItem = -1;
+            return;
+        }
+
         g_selectedListItem = (int)userData;
     }
 }
@@ -106,6 +132,68 @@ Clay_Color GetListBoxItemBackgroundColor(int idx)
     if (Clay_Hovered())
         return (Clay_Color){0, 128, 0, 255};
     return (Clay_Color){150, 150, 255, 255};
+}
+
+void PartBuilderDemo()
+{
+    
+}
+
+void LayoutDemo()
+{
+    static float fv = 0;
+    static bool bc = false;
+
+    const float min = 0, max = 100;
+    Clay_TextElementConfig te = {.fontId = FONT_ID_BODY_16, .fontSize = 24, .textColor = COLOR_BLACK};
+
+    CLAY(CLAY_ID("CheckBox Demo"),
+         CLAY_LAYOUT((Clay_LayoutConfig){
+             .sizing = {
+                 .width = CLAY_SIZING_GROW(),
+                 .height = CLAY_SIZING_FIXED(64)}}))
+    {
+        CLAY(CLAY_ID("Check Box Label"),
+             CLAY_LAYOUT((Clay_LayoutConfig){
+                 .sizing = {.width = CLAY_SIZING_GROW(), .height = CLAY_SIZING_FIT()}}))
+        {
+
+            CLAY(CLAY_ID("Cb Label Expander"),
+                 CLAY_LAYOUT((Clay_LayoutConfig){
+                     .sizing = {.width = CLAY_SIZING_GROW(), .height = CLAY_SIZING_FIT()}}))
+            {
+                CLAY_TEXT(CLAY_STRING("Demo Checkbox"), CLAY_TEXT_CONFIG(te));
+            }
+
+            CheckBox(&bc, CLAY_STRING("CHECKBOX1"));
+        }
+    }
+
+    CLAY(CLAY_ID("SliderDemo"),
+         CLAY_LAYOUT((Clay_LayoutConfig){
+             .layoutDirection = CLAY_TOP_TO_BOTTOM,
+             .sizing = {CLAY_SIZING_GROW(), CLAY_SIZING_GROW()}}))
+    {
+
+        float d = (-1 * fv) + 100;
+        snprintf(g_sliderValueTextBuffer, sizeof(g_sliderValueTextBuffer),
+                 "%.2f, %.2f", fv, d);
+
+        CLAY_TEXT(ClayStringFromCString(g_sliderValueTextBuffer), CLAY_TEXT_CONFIG(te));
+        CLAY(CLAY_LAYOUT((Clay_LayoutConfig){
+            .padding = {5, 5},
+            .sizing = {.width = CLAY_SIZING_GROW(), .height = CLAY_SIZING_FIXED(32)}}))
+        {
+            Slider(&fv, min, max, CLAY_STRING("SLIDER1"));
+        }
+
+        CLAY(CLAY_LAYOUT((Clay_LayoutConfig){
+            .padding = {5, 5},
+            .sizing = {.width = CLAY_SIZING_GROW(), .height = CLAY_SIZING_FIXED(32)}}))
+        {
+            Slider(&d, min, max, CLAY_STRING("SLIDER2"));
+        }
+    }
 }
 
 Clay_RenderCommandArray CreateLayout()
@@ -136,11 +224,12 @@ Clay_RenderCommandArray CreateLayout()
                      .childGap = 5,
                      .sizing = {.width = CLAY_SIZING_GROW(), .height = CLAY_SIZING_GROW()}}))
             {
-
-                Clay_String c = g_itemnames[0];
+                InvItem c = g_player_inv[0];
                 int i = 0;
-                while (c.chars != NULL)
+                while (c.partname.chars != NULL)
                 {
+                    if (c.isplaced)
+                        goto next;
 
                     CLAY(CLAY_LAYOUT((Clay_LayoutConfig){
                              .sizing = {.width = CLAY_SIZING_GROW()},
@@ -155,11 +244,12 @@ Clay_RenderCommandArray CreateLayout()
                             .fontSize = 16,
                             .textColor = COLOR_BLACK};
 
-                        CLAY_TEXT(g_itemnames[i], CLAY_TEXT_CONFIG(cfg));
+                        CLAY_TEXT(c.partname, CLAY_TEXT_CONFIG(cfg));
                     }
 
+                next:
                     i += 1;
-                    c = g_itemnames[i];
+                    c = g_player_inv[i];
                 }
             }
         }
@@ -180,12 +270,11 @@ Clay_RenderCommandArray CreateLayout()
                      .color = {180, 180, 180, 255},
                      .cornerRadius = cornerraidus}))
             {
-                RenderHeaderButton(CLAY_STRING("Header Item 1"), 0);
-                RenderHeaderButton(CLAY_STRING("Header Item 2"), 1);
+                RenderHeaderButton(CLAY_STRING("Ui Element Demo"), 0);
+                RenderHeaderButton(CLAY_STRING("Builder Ui Demo"), 1);
                 RenderHeaderButton(CLAY_STRING("Header Item 3"), 2);
             }
             CLAY(CLAY_ID("MainContent"),
-                 //  CLAY_SCROLL({.vertical = true}),
                  CLAY_LAYOUT((Clay_LayoutConfig){
                      .layoutDirection = CLAY_TOP_TO_BOTTOM,
                      .padding = {16, 16},
@@ -195,58 +284,19 @@ Clay_RenderCommandArray CreateLayout()
                      .color = {200, 200, 255, 255},
                      .cornerRadius = cornerraidus}))
             {
-                static float fv = 0;
-                static bool bc = false;
 
-                const float min = 0, max = 100;
-                Clay_TextElementConfig te = {.fontId = FONT_ID_BODY_16, .fontSize = 24, .textColor = COLOR_BLACK};
-
-                CLAY(CLAY_ID("CheckBox Demo"),
-                     CLAY_LAYOUT((Clay_LayoutConfig){
-                         .sizing = {
-                             .width = CLAY_SIZING_GROW(),
-                             .height = CLAY_SIZING_FIXED(64)}}))
+                switch (g_selectedHeader)
                 {
-                    CLAY(CLAY_ID("Check Box Label"),
-                         CLAY_LAYOUT((Clay_LayoutConfig){
-                             .sizing = {.width = CLAY_SIZING_GROW(), .height = CLAY_SIZING_FIT()}}))
-                    {
+                case 0:
+                    LayoutDemo();
+                    break;
 
-                        CLAY(CLAY_ID("Cb Label Expander"),
-                             CLAY_LAYOUT((Clay_LayoutConfig){
-                                 .sizing = {.width = CLAY_SIZING_GROW(), .height = CLAY_SIZING_FIT()}}))
-                        {
-                            CLAY_TEXT(CLAY_STRING("Demo Checkbox"), CLAY_TEXT_CONFIG(te));
-                        }
+                case 1:
+                    PartBuilderDemo();
+                    break;
 
-                        CheckBox(&bc, CLAY_STRING("CHECKBOX1"));
-                    }
-                }
-
-                CLAY(CLAY_ID("SliderDemo"),
-                     CLAY_LAYOUT((Clay_LayoutConfig){
-                         .layoutDirection = CLAY_TOP_TO_BOTTOM,
-                         .sizing = {CLAY_SIZING_GROW(), CLAY_SIZING_GROW()}}))
-                {
-
-                    float d = (-1 * fv) + 100;
-                    snprintf(g_sliderValueTextBuffer, sizeof(g_sliderValueTextBuffer),
-                             "%.2f, %.2f", fv, d);
-
-                    CLAY_TEXT(ClayStringFromCString(g_sliderValueTextBuffer), CLAY_TEXT_CONFIG(te));
-                    CLAY(CLAY_LAYOUT((Clay_LayoutConfig){
-                        .padding = {5, 5},
-                        .sizing = {.width = CLAY_SIZING_GROW(), .height = CLAY_SIZING_FIXED(32)}}))
-                    {
-                        Slider(&fv, min, max, CLAY_STRING("SLIDER1"));
-                    }
-
-                    CLAY(CLAY_LAYOUT((Clay_LayoutConfig){
-                        .padding = {5, 5},
-                        .sizing = {.width = CLAY_SIZING_GROW(), .height = CLAY_SIZING_FIXED(32)}}))
-                    {
-                        Slider(&d, min, max, CLAY_STRING("SLIDER2"));
-                    }
+                case 2:
+                    break;
                 }
             }
         }
