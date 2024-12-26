@@ -35,8 +35,9 @@
 #define COLOR_RAYWHITE   (Clay_Color){ 245, 245, 245, 255 }   // My own White (raylib logo)
 
 void Slider(float *value, float min, float max, Clay_String label);
+void CheckBox(bool *value, Clay_String label);
 
-Clay_String ClayStringFromCString(const char *str);
+Clay_String ClayStringFromCString(const char *str); // str MUST be null terminated
 
 // clang-format restore
 #endif // slip_h

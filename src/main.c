@@ -195,9 +195,33 @@ Clay_RenderCommandArray CreateLayout()
                      .color = {200, 200, 255, 255},
                      .cornerRadius = cornerraidus}))
             {
-                static float v = 0;
+                static float fv = 0;
+                static bool bc = false;
+
                 const float min = 0, max = 100;
-                Clay_TextElementConfig te = {.fontId = FONT_ID_BODY_16, .fontSize = 24, .textColor = COLOR_ORANGE};
+                Clay_TextElementConfig te = {.fontId = FONT_ID_BODY_16, .fontSize = 24, .textColor = COLOR_BLACK};
+
+                CLAY(CLAY_ID("CheckBox Demo"),
+                     CLAY_LAYOUT((Clay_LayoutConfig){
+                         .sizing = {
+                             .width = CLAY_SIZING_GROW(),
+                             .height = CLAY_SIZING_FIXED(64)}}))
+                {
+                    CLAY(CLAY_ID("Check Box Label"),
+                         CLAY_LAYOUT((Clay_LayoutConfig){
+                             .sizing = {.width = CLAY_SIZING_GROW(), .height = CLAY_SIZING_FIT()}}))
+                    {
+
+                        CLAY(CLAY_ID("Cb Label Expander"),
+                             CLAY_LAYOUT((Clay_LayoutConfig){
+                                 .sizing = {.width = CLAY_SIZING_GROW(), .height = CLAY_SIZING_FIT()}}))
+                        {
+                            CLAY_TEXT(CLAY_STRING("Demo Checkbox"), CLAY_TEXT_CONFIG(te));
+                        }
+
+                        CheckBox(&bc, CLAY_STRING("CHECKBOX1"));
+                    }
+                }
 
                 CLAY(CLAY_ID("SliderDemo"),
                      CLAY_LAYOUT((Clay_LayoutConfig){
@@ -205,16 +229,21 @@ Clay_RenderCommandArray CreateLayout()
                          .sizing = {CLAY_SIZING_GROW(), CLAY_SIZING_GROW()}}))
                 {
 
-                    float d = (-1 * v) + 100;
+                    float d = (-1 * fv) + 100;
                     snprintf(g_sliderValueTextBuffer, sizeof(g_sliderValueTextBuffer),
-                             "%.2f, %.2f", v, d);
+                             "%.2f, %.2f", fv, d);
 
                     CLAY_TEXT(ClayStringFromCString(g_sliderValueTextBuffer), CLAY_TEXT_CONFIG(te));
-                    CLAY(CLAY_LAYOUT((Clay_LayoutConfig){.padding = {5, 5}, .sizing = {.width = CLAY_SIZING_GROW(), .height = CLAY_SIZING_FIXED(32)}}))
+                    CLAY(CLAY_LAYOUT((Clay_LayoutConfig){
+                        .padding = {5, 5},
+                        .sizing = {.width = CLAY_SIZING_GROW(), .height = CLAY_SIZING_FIXED(32)}}))
                     {
-                        Slider(&v, min, max, CLAY_STRING("SLIDER1"));
+                        Slider(&fv, min, max, CLAY_STRING("SLIDER1"));
                     }
-                    CLAY(CLAY_LAYOUT((Clay_LayoutConfig){.padding = {5, 5}, .sizing = {.width = CLAY_SIZING_GROW(), .height = CLAY_SIZING_FIXED(32)}}))
+
+                    CLAY(CLAY_LAYOUT((Clay_LayoutConfig){
+                        .padding = {5, 5},
+                        .sizing = {.width = CLAY_SIZING_GROW(), .height = CLAY_SIZING_FIXED(32)}}))
                     {
                         Slider(&d, min, max, CLAY_STRING("SLIDER2"));
                     }
@@ -259,12 +288,17 @@ ScrollbarData scrollbarData = (ScrollbarData){};
 
 bool debugEnabled = false;
 
+void clay_error(Clay_ErrorData ed) { TraceLog(LOG_ERROR, ed.errorText.chars); }
+
 int main(void)
 {
     uint64_t totalMemorySize = Clay_MinMemorySize();
-    Clay_Arena clayMemory = (Clay_Arena){.label = CLAY_STRING("Clay Memory Arena"), .memory = malloc(totalMemorySize), .capacity = totalMemorySize};
+    Clay_Arena clayMemory = (Clay_Arena){.memory = malloc(totalMemorySize), .capacity = totalMemorySize};
     Clay_SetMeasureTextFunction(Raylib_MeasureText);
-    Clay_Initialize(clayMemory, (Clay_Dimensions){(float)GetScreenWidth(), (float)GetScreenHeight()});
+
+    Clay_ErrorHandler cerror = {.errorHandlerFunction = clay_error, .userData = 0};
+
+    Clay_Initialize(clayMemory, (Clay_Dimensions){(float)GetScreenWidth(), (float)GetScreenHeight()}, cerror);
     Clay_Raylib_Initialize(1024, 768, "Clay - Raylib Renderer Example", FLAG_VSYNC_HINT | FLAG_WINDOW_RESIZABLE | FLAG_WINDOW_HIGHDPI | FLAG_MSAA_4X_HINT);
     Raylib_fonts[FONT_ID_BODY_24] = (Raylib_Font){
         .font = LoadFontEx("resources/Roboto-Regular.ttf", 48, 0, 400),
@@ -346,4 +380,3 @@ int main(void)
     }
     return 0;
 }
-
