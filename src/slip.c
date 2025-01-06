@@ -121,3 +121,13 @@ void Slider(float *value, float min, float max, Clay_String id)
         }
     }
 }
+
+
+void TextEditor(char *content, Clay_TextElementConfig tec)
+{
+    // --- STATE UPDATE ---
+
+    // --- RENDER ---
+
+    CLAY_TEXT(ClayStringFromCString(content), &tec);
+}

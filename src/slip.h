@@ -37,6 +37,8 @@
 void Slider(float *value, float min, float max, Clay_String label);
 void CheckBox(bool *value, Clay_String label);
 
+void TextEditor(char *text, Clay_TextElementConfig cfg);
+
 Clay_String ClayStringFromCString(const char *str); // str MUST be null terminated
 
 // clang-format restore

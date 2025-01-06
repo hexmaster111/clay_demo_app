@@ -15,7 +15,7 @@ Clay_TextElementConfig headerTextConfig = (Clay_TextElementConfig){.fontId = 1, 
 Clay_CornerRadius cornerraidus = {10, 10, 10, 10};
 
 int g_selectedListItem = -1;
-int g_selectedHeader = 1;
+int g_selectedHeader = 2;
 char g_sliderValueTextBuffer[100] = {0};
 
 typedef struct
@@ -99,6 +99,21 @@ void RenderHeaderButton(Clay_String text, int idx)
     }
 }
 
+void RenderMenuButton(Clay_String text,
+                      void (*onHover)(Clay_ElementId elementId, Clay_PointerData pointerData, intptr_t userData),
+                      intptr_t userdata,
+                      Clay_Color (*colorGet)(intptr_t userdata))
+{
+    CLAY(CLAY_LAYOUT({.padding = {16, 8}}),
+         CLAY_RECTANGLE((Clay_RectangleElementConfig){
+             .color = colorGet(userdata),
+             .cornerRadius = cornerraidus}),
+         Clay_OnHover(onHover, userdata))
+    {
+        CLAY_TEXT(text, CLAY_TEXT_CONFIG(headerTextConfig));
+    }
+}
+
 Clay_LayoutConfig dropdownTextItemLayout = (Clay_LayoutConfig){.padding = {8, 4}};
 Clay_RectangleElementConfig dropdownRectangleConfig = (Clay_RectangleElementConfig){.color = {180, 180, 180, 255}};
 Clay_TextElementConfig dropdownTextElementConfig = (Clay_TextElementConfig){.fontSize = 24, .textColor = {255, 255, 255, 255}};
@@ -134,9 +149,67 @@ Clay_Color GetListBoxItemBackgroundColor(int idx)
     return (Clay_Color){150, 150, 255, 255};
 }
 
+Clay_Color GetTextEditorMenuBarButtonColor(intptr_t ud)
+{
+    if (Clay_Hovered() && !IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+    {
+        return COLOR_BLUE;
+    }
+    else if (Clay_Hovered())
+    {
+        return COLOR_SKYBLUE;
+    }
+    else
+    {
+        return COLOR_ORANGE;
+    }
+}
+
 void PartBuilderDemo()
 {
-    
+}
+
+void File_OnHover(Clay_ElementId elementId, Clay_PointerData pointerData, intptr_t userData)
+{
+}
+
+void Edit_OnHover(Clay_ElementId elementId, Clay_PointerData pointerData, intptr_t userData)
+{
+}
+
+void TextEditorDemo()
+{
+    static char *text = NULL;
+
+    if (text == NULL)
+    {
+        text = calloc(1, 1024); // this IS a mem leak
+        TraceLog(LOG_INFO, "ALLOC TEXT DEMO");
+
+        memcpy(text, "hello world!", 13);
+    }
+
+    CLAY(CLAY_ID("TextEditorDemo"),
+         CLAY_LAYOUT((Clay_LayoutConfig){
+             .childAlignment = {.x = CLAY_ALIGN_X_LEFT},
+             .layoutDirection = CLAY_TOP_TO_BOTTOM,
+             .sizing = {.height = CLAY_SIZING_GROW(), .width = CLAY_SIZING_GROW()}}))
+    {
+        CLAY(CLAY_ID("TextEditorDemoToolBar"),
+             CLAY_LAYOUT((Clay_LayoutConfig){.sizing = {.height = CLAY_SIZING_FIXED(64), .width = CLAY_SIZING_GROW()}, .childGap = 8}),
+             CLAY_RECTANGLE((Clay_RectangleElementConfig){.color = {180, 180, 180, 255}, .cornerRadius = cornerraidus}))
+        {
+            RenderMenuButton(CLAY_STRING("File"), File_OnHover, 0, GetTextEditorMenuBarButtonColor);
+            RenderMenuButton(CLAY_STRING("Edit"), Edit_OnHover, 0, GetTextEditorMenuBarButtonColor);
+        }
+        
+        Clay_TextElementConfig te = {.fontId = FONT_ID_BODY_16, .fontSize = 24, .textColor = COLOR_BLACK};
+
+        CLAY(CLAY_ID("TextEditorHolder"), CLAY_LAYOUT((Clay_LayoutConfig){.sizing = {.height = CLAY_SIZING_GROW(), .width = CLAY_SIZING_GROW()}}))
+        {
+            TextEditor(text, te);
+        }
+    }
 }
 
 void LayoutDemo()
@@ -272,7 +345,7 @@ Clay_RenderCommandArray CreateLayout()
             {
                 RenderHeaderButton(CLAY_STRING("Ui Element Demo"), 0);
                 RenderHeaderButton(CLAY_STRING("Builder Ui Demo"), 1);
-                RenderHeaderButton(CLAY_STRING("Header Item 3"), 2);
+                RenderHeaderButton(CLAY_STRING("Text Editor Demo"), 2);
             }
             CLAY(CLAY_ID("MainContent"),
                  CLAY_LAYOUT((Clay_LayoutConfig){
@@ -296,6 +369,7 @@ Clay_RenderCommandArray CreateLayout()
                     break;
 
                 case 2:
+                    TextEditorDemo();
                     break;
                 }
             }
